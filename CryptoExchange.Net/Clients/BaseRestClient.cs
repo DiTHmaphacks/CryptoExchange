@@ -3,6 +3,7 @@ using System.Linq;
 using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Interfaces;
 using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 
 namespace CryptoExchange.Net
 {
@@ -19,7 +20,7 @@ namespace CryptoExchange.Net
         /// </summary>
         /// <param name="name">The name of the API this client is for</param>
         /// <param name="options">The options for this client</param>
-        protected BaseRestClient(string name, ClientOptions options) : base(name, options)
+        protected BaseRestClient(string name, ExchangeOptions options) : base(name, options)
         {
             if (options == null)
                 throw new ArgumentNullException(nameof(options));

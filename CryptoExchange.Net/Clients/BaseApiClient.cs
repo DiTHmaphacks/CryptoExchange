@@ -9,6 +9,7 @@ using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Interfaces;
 using CryptoExchange.Net.Logging;
 using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -90,7 +91,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Options
         /// </summary>
-        public ApiClientOptions Options { get; }
+        public ApiOptions Options { get; }
 
         /// <summary>
         /// The last used id, use NextId() to get the next id and up this
@@ -116,7 +117,7 @@ namespace CryptoExchange.Net
         /// <param name="log">Logger</param>
         /// <param name="clientOptions">Client options</param>
         /// <param name="apiOptions">Api client options</param>
-        protected BaseApiClient(Log log, ClientOptions clientOptions, ApiClientOptions apiOptions)
+        protected BaseApiClient(Log log, ExchangeOptions clientOptions, ApiOptions apiOptions)
         {
             Options = apiOptions;
             _log = log;

@@ -1,6 +1,7 @@
 ﻿using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Logging;
 using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -28,14 +29,14 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Provided client options
         /// </summary>
-        public ClientOptions ClientOptions { get; }
+        public ExchangeOptions ClientOptions { get; }
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="name">The name of the API this client is for</param>
         /// <param name="options">The options for this client</param>
-        protected BaseClient(string name, ClientOptions options)
+        protected BaseClient(string name, ExchangeOptions options)
         {
             log = new Log(name);
             log.UpdateWriters(options.LogWriters);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Interfaces;
 using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 using CryptoExchange.Net.Sockets;
 using Microsoft.Extensions.Logging;
 
@@ -36,7 +37,7 @@ namespace CryptoExchange.Net
         /// </summary>
         /// <param name="name">The name of the API this client is for</param>
         /// <param name="options">The options for this client</param>
-        protected BaseSocketClient(string name, ClientOptions options) : base(name, options)
+        protected BaseSocketClient(string name, ExchangeOptions options) : base(name, options)
         {
         }
 

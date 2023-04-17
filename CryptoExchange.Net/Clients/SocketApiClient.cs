@@ -1,6 +1,7 @@
 using CryptoExchange.Net.Interfaces;
 using CryptoExchange.Net.Logging;
 using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 using CryptoExchange.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -105,7 +106,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Options
         /// </summary>
-        internal ClientOptions ClientOptions { get; set; }
+        internal ExchangeOptions ClientOptions { get; set; }
         #endregion
 
         /// <summary>
@@ -114,7 +115,7 @@ namespace CryptoExchange.Net
         /// <param name="log">log</param>
         /// <param name="options">Client options</param>
         /// <param name="apiOptions">The Api client options</param>
-        public SocketApiClient(Log log, ClientOptions options, SocketApiClientOptions apiOptions) : base(log, options, apiOptions)
+        public SocketApiClient(Log log, ExchangeOptions options, ApiOptions apiOptions) : base(log, options, apiOptions)
         {
             ClientOptions = options;
         }

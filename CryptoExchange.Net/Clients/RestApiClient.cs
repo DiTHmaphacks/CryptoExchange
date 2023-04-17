@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using CryptoExchange.Net.Interfaces;
 using CryptoExchange.Net.Logging;
 using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 using CryptoExchange.Net.Requests;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -51,7 +52,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Options
         /// </summary>
-        internal ClientOptions ClientOptions { get; set; }
+        internal ExchangeOptions ClientOptions { get; set; }
 
         /// <summary>
         /// ctor
@@ -59,7 +60,7 @@ namespace CryptoExchange.Net
         /// <param name="log">Logger</param>
         /// <param name="options">The base client options</param>
         /// <param name="apiOptions">The Api client options</param>
-        public RestApiClient(Log log, ClientOptions options, RestApiClientOptions apiOptions) : base(log, options, apiOptions)
+        public RestApiClient(Log log, ClientOptions options, ApiOptions apiOptions) : base(log, options, apiOptions)
         {
             var rateLimiters = new List<IRateLimiter>();
             foreach (var rateLimiter in apiOptions.RateLimiters)
