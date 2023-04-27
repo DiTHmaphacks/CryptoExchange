@@ -42,7 +42,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Options for this client
         /// </summary>
-        public new RestApiClientOptions Options => (RestApiClientOptions)base.Options;
+        public new HttpApiOptions Options => (HttpApiOptions)base.Options;
 
         /// <summary>
         /// List of rate limiters
@@ -60,7 +60,7 @@ namespace CryptoExchange.Net
         /// <param name="log">Logger</param>
         /// <param name="options">The base client options</param>
         /// <param name="apiOptions">The Api client options</param>
-        public RestApiClient(Log log, ClientOptions options, ApiOptions apiOptions) : base(log, options, apiOptions)
+        public RestApiClient(Log log, ExchangeOptions options, HttpApiOptions apiOptions) : base(log, options, apiOptions)
         {
             var rateLimiters = new List<IRateLimiter>();
             foreach (var rateLimiter in apiOptions.RateLimiters)

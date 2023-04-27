@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using CryptoExchange.Net.Interfaces;
 using CryptoExchange.Net.Logging;
 using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 using CryptoExchange.Net.Sockets;
 using Microsoft.Extensions.Logging;
 

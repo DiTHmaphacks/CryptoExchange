@@ -29,7 +29,7 @@ namespace CryptoExchange.Net.UnitTests
 
 
             //assert
-            Assert.IsTrue(client.SubClient.Options.BaseAddress == "http://test.address.com");
+            Assert.IsTrue(client.SubClient.Options.TradeEnvironment.BaseAddress == "http://test.address.com");
             Assert.IsTrue(client.SubClient.Options.ReconnectInterval.TotalSeconds == 6);
         }
 

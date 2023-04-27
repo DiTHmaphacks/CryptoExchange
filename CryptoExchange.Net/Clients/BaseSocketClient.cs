@@ -36,8 +36,7 @@ namespace CryptoExchange.Net
         /// ctor
         /// </summary>
         /// <param name="name">The name of the API this client is for</param>
-        /// <param name="options">The options for this client</param>
-        protected BaseSocketClient(string name, ExchangeOptions options) : base(name, options)
+        protected BaseSocketClient(string name) : base(name)
         {
         }
 

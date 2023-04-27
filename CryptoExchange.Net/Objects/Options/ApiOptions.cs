@@ -6,6 +6,9 @@ using System.Text;
 
 namespace CryptoExchange.Net.Objects.Options
 {
+    /// <summary>
+    /// Options for API usage
+    /// </summary>
     public class ApiOptions
     {
         /// <summary>
@@ -14,9 +17,11 @@ namespace CryptoExchange.Net.Objects.Options
         public bool OutputOriginalData { get; set; } = false;
 
         /// <summary>
-        /// The base address of the API
+        /// The environment of the API
         /// </summary>
-        public string BaseAddress { get; set; }
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        public TradeEnvironment TradeEnvironment { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
         /// <summary>
         /// The api credentials used for signing requests to this API. Overrides API credentials provided in the client options

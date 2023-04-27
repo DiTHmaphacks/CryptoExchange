@@ -1,4 +1,5 @@
 ﻿using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 using CryptoExchange.Net.Sockets;
 using System;
 using System.Threading.Tasks;
@@ -25,7 +26,7 @@ namespace CryptoExchange.Net.Interfaces
         /// <summary>
         /// Client options
         /// </summary>
-        SocketApiClientOptions Options { get; }
+        ApiOptions Options { get; }
         /// <summary>
         /// The factory for creating sockets. Used for unit testing
         /// </summary>

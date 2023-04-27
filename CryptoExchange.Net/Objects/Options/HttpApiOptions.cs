@@ -38,5 +38,26 @@ namespace CryptoExchange.Net.Objects.Options
         /// How often the timestamp adjustment between client and server is recalculated. If you need a very small TimeSpan here you're probably better of syncing your server time more often
         /// </summary>
         public TimeSpan TimestampRecalculationInterval { get; set; } = TimeSpan.FromHours(1);
+
+        /// <summary>
+        /// Create a copy of this options
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T Copy<T>() where T : HttpApiOptions, new()
+        {
+            return new T
+            {
+                ApiCredentials = ApiCredentials?.Copy(),
+                OutputOriginalData = OutputOriginalData,
+                TradeEnvironment = TradeEnvironment,
+                AutoTimestamp = AutoTimestamp,
+                HttpClient = HttpClient,
+                RateLimiters = RateLimiters,
+                RateLimitingBehaviour = RateLimitingBehaviour,
+                RequestTimeout = RequestTimeout,
+                TimestampRecalculationInterval = TimestampRecalculationInterval
+            };
+        }
     }
 }

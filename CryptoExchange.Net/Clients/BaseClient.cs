@@ -29,25 +29,37 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Provided client options
         /// </summary>
-        public ExchangeOptions ClientOptions { get; }
+        public ExchangeOptions ClientOptions { get; private set; }
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="name">The name of the API this client is for</param>
-        /// <param name="options">The options for this client</param>
-        protected BaseClient(string name, ExchangeOptions options)
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        protected BaseClient(string name)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             log = new Log(name);
+            
+            Name = name;
+        }
+
+        /// <summary>
+        /// Initialize the client with the specified options
+        /// </summary>
+        /// <param name="options"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public virtual void Initialize(ExchangeOptions options)
+        {
+            if (options == null)
+                throw new ArgumentNullException(nameof(options));
+
             log.UpdateWriters(options.LogWriters);
             log.Level = options.LogLevel;
             options.OnLoggingChanged += HandleLogConfigChange;
 
             ClientOptions = options;
-
-            Name = name;
-
-            log.Write(LogLevel.Trace, $"Client configuration: {options}, CryptoExchange.Net: v{typeof(BaseClient).Assembly.GetName().Version}, {name}.Net: v{GetType().Assembly.GetName().Version}");
+            log.Write(LogLevel.Trace, $"Client configuration: {options}, CryptoExchange.Net: v{typeof(BaseClient).Assembly.GetName().Version}, {Name}.Net: v{GetType().Assembly.GetName().Version}");
         }
 
         /// <summary>
@@ -66,6 +78,9 @@ namespace CryptoExchange.Net
         /// <param name="apiClient">The client</param>
         protected T AddApiClient<T>(T apiClient) where T:  BaseApiClient
         {
+            if (ClientOptions == null)
+                throw new InvalidOperationException("Client should have called Initialize before adding API clients");
+
             log.Write(LogLevel.Trace, $"  {apiClient.GetType().Name} configuration: {apiClient.Options}");
             ApiClients.Add(apiClient);
             return apiClient;

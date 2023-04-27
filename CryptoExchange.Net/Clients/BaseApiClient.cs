@@ -84,9 +84,9 @@ namespace CryptoExchange.Net
         public string requestBodyEmptyContent = "{}";
 
         /// <summary>
-        /// The base address for this API client
+        /// The environment this client communicates to
         /// </summary>
-        internal protected string BaseAddress { get; }
+        public TradeEnvironment TradeEnvironment { get; }
 
         /// <summary>
         /// Options
@@ -119,10 +119,13 @@ namespace CryptoExchange.Net
         /// <param name="apiOptions">Api client options</param>
         protected BaseApiClient(Log log, ExchangeOptions clientOptions, ApiOptions apiOptions)
         {
+            if (apiOptions.TradeEnvironment == null || string.IsNullOrEmpty(apiOptions.TradeEnvironment.BaseAddress))
+                throw new ArgumentNullException(nameof(apiOptions.TradeEnvironment));
+
             Options = apiOptions;
             _log = log;
             _apiCredentials = apiOptions.ApiCredentials?.Copy() ?? clientOptions.ApiCredentials?.Copy();
-            BaseAddress = apiOptions.BaseAddress;
+            TradeEnvironment = apiOptions.TradeEnvironment;
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 
 namespace CryptoExchange.Net.Objects.Options
 {
@@ -49,5 +50,28 @@ namespace CryptoExchange.Net.Objects.Options
         /// The time to wait after connecting a socket before sending messages. Can be used for API's which will rate limit if you subscribe directly after connecting.
         /// </summary>
         public TimeSpan DelayAfterConnect { get; set; } = TimeSpan.Zero;
+
+        /// <summary>
+        /// Create a copy of this options
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T Copy<T>() where T : SocketApiOptions, new()
+        {
+            return new T
+            {
+                ApiCredentials = ApiCredentials?.Copy(),
+                OutputOriginalData = OutputOriginalData,
+                AutoReconnect = AutoReconnect,
+                DelayAfterConnect = DelayAfterConnect,
+                MaxConcurrentResubscriptionsPerSocket = MaxConcurrentResubscriptionsPerSocket,
+                SocketResponseTimeout = SocketResponseTimeout,
+                ReconnectInterval = ReconnectInterval,
+                SocketNoDataTimeout = SocketNoDataTimeout,
+                SocketSubscriptionsCombineTarget = SocketSubscriptionsCombineTarget,
+                MaxSocketConnections = MaxSocketConnections,
+                TradeEnvironment = TradeEnvironment
+            };
+        }
     }
 }

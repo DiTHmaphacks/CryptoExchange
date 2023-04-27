@@ -101,7 +101,7 @@ namespace CryptoExchange.Net
         }
 
         /// <inheritdoc />
-        public new SocketApiClientOptions Options => (SocketApiClientOptions)base.Options;
+        public new SocketApiOptions Options => (SocketApiOptions)base.Options;
 
         /// <summary>
         /// Options
@@ -143,7 +143,7 @@ namespace CryptoExchange.Net
         /// <returns></returns>
         protected virtual Task<CallResult<UpdateSubscription>> SubscribeAsync<T>(object? request, string? identifier, bool authenticated, Action<DataEvent<T>> dataHandler, CancellationToken ct)
         {
-            return SubscribeAsync(Options.BaseAddress, request, identifier, authenticated, dataHandler, ct);
+            return SubscribeAsync(Options.TradeEnvironment.BaseAddress, request, identifier, authenticated, dataHandler, ct);
         }
 
         /// <summary>
@@ -286,7 +286,7 @@ namespace CryptoExchange.Net
         /// <returns></returns>
         protected virtual Task<CallResult<T>> QueryAsync<T>(object request, bool authenticated)
         {
-            return QueryAsync<T>(Options.BaseAddress, request, authenticated);
+            return QueryAsync<T>(Options.TradeEnvironment.BaseAddress, request, authenticated);
         }
 
         /// <summary>
