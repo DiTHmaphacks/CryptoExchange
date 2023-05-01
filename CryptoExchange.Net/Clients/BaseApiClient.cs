@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Interfaces;
-using CryptoExchange.Net.Logging;
 using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Options;
 using Microsoft.Extensions.Logging;
@@ -28,7 +27,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Logger
         /// </summary>
-        protected Log _log;
+        protected ILogger _logger;
 
         /// <summary>
         /// If we are disposing
@@ -86,12 +85,12 @@ namespace CryptoExchange.Net
         /// <summary>
         /// The environment this client communicates to
         /// </summary>
-        public TradeEnvironment TradeEnvironment { get; }
+        public string BaseAddress { get; }
 
         /// <summary>
-        /// Options
+        /// 
         /// </summary>
-        public ApiOptions Options { get; }
+        public bool OutputOriginalData { get; }
 
         /// <summary>
         /// The last used id, use NextId() to get the next id and up this
@@ -114,18 +113,18 @@ namespace CryptoExchange.Net
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="log">Logger</param>
+        /// <param name="logger">Logger</param>
         /// <param name="clientOptions">Client options</param>
         /// <param name="apiOptions">Api client options</param>
-        protected BaseApiClient(Log log, ExchangeOptions clientOptions, ApiOptions apiOptions)
+        protected BaseApiClient(ILogger logger, bool outputOriginalData, ApiCredentials? apiCredentials, string baseAddress)
         {
-            if (apiOptions.TradeEnvironment == null || string.IsNullOrEmpty(apiOptions.TradeEnvironment.BaseAddress))
-                throw new ArgumentNullException(nameof(apiOptions.TradeEnvironment));
+            if (string.IsNullOrEmpty(baseAddress))
+                throw new ArgumentNullException(nameof(ApiOptions.TradeEnvironment));
 
-            Options = apiOptions;
-            _log = log;
-            _apiCredentials = apiOptions.ApiCredentials?.Copy() ?? clientOptions.ApiCredentials?.Copy();
-            TradeEnvironment = apiOptions.TradeEnvironment;
+            _logger = logger;
+            _apiCredentials = apiCredentials?.Copy();
+            OutputOriginalData = outputOriginalData;
+            BaseAddress = baseAddress;
         }
 
         /// <summary>
@@ -153,7 +152,7 @@ namespace CryptoExchange.Net
             if (string.IsNullOrEmpty(data))
             {
                 var info = "Empty data object received";
-                _log.Write(LogLevel.Error, info);
+                _logger.Log(LogLevel.Error, info);
                 return new CallResult<JToken>(new DeserializeError(info, data));
             }
 
@@ -192,7 +191,7 @@ namespace CryptoExchange.Net
             var tokenResult = ValidateJson(data);
             if (!tokenResult)
             {
-                _log.Write(LogLevel.Error, tokenResult.Error!.Message);
+                _logger.Log(LogLevel.Error, tokenResult.Error!.Message);
                 return new CallResult<T>(tokenResult.Error);
             }
 
@@ -218,20 +217,20 @@ namespace CryptoExchange.Net
             catch (JsonReaderException jre)
             {
                 var info = $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize JsonReaderException: {jre.Message} Path: {jre.Path}, LineNumber: {jre.LineNumber}, LinePosition: {jre.LinePosition}, data: {obj}";
-                _log.Write(LogLevel.Error, info);
+                _logger.Log(LogLevel.Error, info);
                 return new CallResult<T>(new DeserializeError(info, obj));
             }
             catch (JsonSerializationException jse)
             {
                 var info = $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize JsonSerializationException: {jse.Message} data: {obj}";
-                _log.Write(LogLevel.Error, info);
+                _logger.Log(LogLevel.Error, info);
                 return new CallResult<T>(new DeserializeError(info, obj));
             }
             catch (Exception ex)
             {
                 var exceptionInfo = ex.ToLogString();
                 var info = $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize Unknown Exception: {exceptionInfo}, data: {obj}";
-                _log.Write(LogLevel.Error, info);
+                _logger.Log(LogLevel.Error, info);
                 return new CallResult<T>(new DeserializeError(info, obj));
             }
         }
@@ -257,12 +256,12 @@ namespace CryptoExchange.Net
 
                 // If we have to output the original json data or output the data into the logging we'll have to read to full response
                 // in order to log/return the json data
-                if (Options.OutputOriginalData == true || _log.Level == LogLevel.Trace)
+                if (OutputOriginalData == true)
                 {
                     data = await reader.ReadToEndAsync().ConfigureAwait(false);
-                    _log.Write(LogLevel.Debug, $"{(requestId != null ? $"[{requestId}] " : "")}Response received{(elapsedMilliseconds != null ? $" in {elapsedMilliseconds}" : " ")}ms{(_log.Level == LogLevel.Trace ? (": " + data) : "")}");
+                    _logger.Log(LogLevel.Debug, $"{(requestId != null ? $"[{requestId}] " : "")}Response received{(elapsedMilliseconds != null ? $" in {elapsedMilliseconds}" : " ")}ms: " + data);
                     var result = Deserialize<T>(data, serializer, requestId);
-                    if (Options.OutputOriginalData == true)
+                    if (OutputOriginalData == true)
                         result.OriginalData = data;
                     return result;
                 }
@@ -270,7 +269,7 @@ namespace CryptoExchange.Net
                 // If we don't have to keep track of the original json data we can use the JsonTextReader to deserialize the stream directly
                 // into the desired object, which has increased performance over first reading the string value into memory and deserializing from that
                 using var jsonReader = new JsonTextReader(reader);
-                _log.Write(LogLevel.Debug, $"{(requestId != null ? $"[{requestId}] " : "")}Response received{(elapsedMilliseconds != null ? $" in {elapsedMilliseconds}" : " ")}ms");
+                _logger.Log(LogLevel.Debug, $"{(requestId != null ? $"[{requestId}] " : "")}Response received{(elapsedMilliseconds != null ? $" in {elapsedMilliseconds}" : " ")}ms");
                 return new CallResult<T>(serializer.Deserialize<T>(jsonReader)!);
             }
             catch (JsonReaderException jre)
@@ -288,7 +287,7 @@ namespace CryptoExchange.Net
                         data = "[Data only available in Trace LogLevel]";
                     }
                 }
-                _log.Write(LogLevel.Error, $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize JsonReaderException: {jre.Message}, Path: {jre.Path}, LineNumber: {jre.LineNumber}, LinePosition: {jre.LinePosition}, data: {data}");
+                _logger.Log(LogLevel.Error, $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize JsonReaderException: {jre.Message}, Path: {jre.Path}, LineNumber: {jre.LineNumber}, LinePosition: {jre.LinePosition}, data: {data}");
                 return new CallResult<T>(new DeserializeError($"Deserialize JsonReaderException: {jre.Message}, Path: {jre.Path}, LineNumber: {jre.LineNumber}, LinePosition: {jre.LinePosition}", data));
             }
             catch (JsonSerializationException jse)
@@ -306,7 +305,7 @@ namespace CryptoExchange.Net
                     }
                 }
 
-                _log.Write(LogLevel.Error, $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize JsonSerializationException: {jse.Message}, data: {data}");
+                _logger.Log(LogLevel.Error, $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize JsonSerializationException: {jse.Message}, data: {data}");
                 return new CallResult<T>(new DeserializeError($"Deserialize JsonSerializationException: {jse.Message}", data));
             }
             catch (Exception ex)
@@ -325,7 +324,7 @@ namespace CryptoExchange.Net
                 }
 
                 var exceptionInfo = ex.ToLogString();
-                _log.Write(LogLevel.Error, $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize Unknown Exception: {exceptionInfo}, data: {data}");
+                _logger.Log(LogLevel.Error, $"{(requestId != null ? $"[{requestId}] " : "")}Deserialize Unknown Exception: {exceptionInfo}, data: {data}");
                 return new CallResult<T>(new DeserializeError($"Deserialize Unknown Exception: {exceptionInfo}", data));
             }
         }

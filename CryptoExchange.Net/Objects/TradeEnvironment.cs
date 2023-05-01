@@ -31,16 +31,16 @@ namespace CryptoExchange.Net.Objects
         /// <summary>
         /// Base address
         /// </summary>
-        public string BaseAddress { get; init; }
+        public Dictionary<string, string> Addresses { get; init; }
 
         /// <summary>
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="baseAddress"></param>
-        public TradeEnvironment(string name, string baseAddress)
+        /// <param name="addresses"></param>
+        public TradeEnvironment(string name, Dictionary<string, string> addresses)
         {
             EnvironmentName = name;
-            BaseAddress = baseAddress;
+            Addresses = addresses;
         }
     }
 }

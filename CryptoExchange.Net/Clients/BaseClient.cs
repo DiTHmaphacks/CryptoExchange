@@ -1,5 +1,4 @@
 ﻿using CryptoExchange.Net.Authentication;
-using CryptoExchange.Net.Logging;
 using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Options;
 using Microsoft.Extensions.Logging;
@@ -24,7 +23,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// The log object
         /// </summary>
-        protected internal Log log;
+        protected internal ILogger _logger;
         
         /// <summary>
         /// Provided client options
@@ -34,12 +33,13 @@ namespace CryptoExchange.Net
         /// <summary>
         /// ctor
         /// </summary>
+        /// <param name="logger">Logger</param>
         /// <param name="name">The name of the API this client is for</param>
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        protected BaseClient(string name)
+        protected BaseClient(ILogger? logger, string name)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
-            log = new Log(name);
+            _logger = logger ?? new TraceLogger();
             
             Name = name;
         }
@@ -54,12 +54,8 @@ namespace CryptoExchange.Net
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
 
-            log.UpdateWriters(options.LogWriters);
-            log.Level = options.LogLevel;
-            options.OnLoggingChanged += HandleLogConfigChange;
-
             ClientOptions = options;
-            log.Write(LogLevel.Trace, $"Client configuration: {options}, CryptoExchange.Net: v{typeof(BaseClient).Assembly.GetName().Version}, {Name}.Net: v{GetType().Assembly.GetName().Version}");
+            _logger.Log(LogLevel.Trace, $"Client configuration: {options}, CryptoExchange.Net: v{typeof(BaseClient).Assembly.GetName().Version}, {Name}.Net: v{GetType().Assembly.GetName().Version}");
         }
 
         /// <summary>
@@ -81,18 +77,9 @@ namespace CryptoExchange.Net
             if (ClientOptions == null)
                 throw new InvalidOperationException("Client should have called Initialize before adding API clients");
 
-            log.Write(LogLevel.Trace, $"  {apiClient.GetType().Name} configuration: {apiClient.Options}");
+            //_logger.Log(LogLevel.Trace, $"  {apiClient.GetType().Name} configuration: {apiClient.Options}");
             ApiClients.Add(apiClient);
             return apiClient;
-        }
-
-        /// <summary>
-        /// Handle a change in the client options log config
-        /// </summary>
-        private void HandleLogConfigChange()
-        {
-            log.UpdateWriters(ClientOptions.LogWriters);
-            log.Level = ClientOptions.LogLevel;
         }
 
         /// <summary>
@@ -100,8 +87,7 @@ namespace CryptoExchange.Net
         /// </summary>
         public virtual void Dispose()
         {
-            log.Write(LogLevel.Debug, "Disposing client");
-            ClientOptions.OnLoggingChanged -= HandleLogConfigChange;
+            _logger.Log(LogLevel.Debug, "Disposing client");
             foreach (var client in ApiClients)
                 client.Dispose();
         }

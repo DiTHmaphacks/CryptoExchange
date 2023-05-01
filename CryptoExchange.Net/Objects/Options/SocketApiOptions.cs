@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 
 namespace CryptoExchange.Net.Objects.Options
 {
@@ -8,6 +7,11 @@ namespace CryptoExchange.Net.Objects.Options
     /// </summary>
     public class SocketApiOptions : ApiOptions
     {
+        /// <summary>
+        /// Proxy settings
+        /// </summary>
+        public ApiProxy? Proxy { get; set; }
+
         /// <summary>
         /// Whether or not the socket should automatically reconnect when losing connection
         /// </summary>

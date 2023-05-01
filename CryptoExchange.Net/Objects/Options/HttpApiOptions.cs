@@ -16,10 +16,6 @@ namespace CryptoExchange.Net.Objects.Options
         public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
         /// <summary>
-        /// Http client to use. If a HttpClient is provided in this property the RequestTimeout and Proxy options provided in these options will be ignored in requests and should be set on the provided HttpClient instance
-        /// </summary>
-        public HttpClient? HttpClient { get; set; }
-        /// <summary>
         /// List of rate limiters to use
         /// </summary>
         public List<IRateLimiter> RateLimiters { get; set; } = new List<IRateLimiter>();
@@ -52,7 +48,6 @@ namespace CryptoExchange.Net.Objects.Options
                 OutputOriginalData = OutputOriginalData,
                 TradeEnvironment = TradeEnvironment,
                 AutoTimestamp = AutoTimestamp,
-                HttpClient = HttpClient,
                 RateLimiters = RateLimiters,
                 RateLimitingBehaviour = RateLimitingBehaviour,
                 RequestTimeout = RequestTimeout,

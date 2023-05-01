@@ -8,7 +8,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using CryptoExchange.Net.Interfaces;
-using CryptoExchange.Net.Logging;
 using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Options;
 using CryptoExchange.Net.Requests;
@@ -42,7 +41,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Options for this client
         /// </summary>
-        public new HttpApiOptions Options => (HttpApiOptions)base.Options;
+        public HttpApiOptions Options { get; }
 
         /// <summary>
         /// List of rate limiters
@@ -57,18 +56,23 @@ namespace CryptoExchange.Net
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="log">Logger</param>
+        /// <param name="logger">Logger</param>
+        /// <param name="httpClient">HttpClient to use</param>
         /// <param name="options">The base client options</param>
         /// <param name="apiOptions">The Api client options</param>
-        public RestApiClient(Log log, ExchangeOptions options, HttpApiOptions apiOptions) : base(log, options, apiOptions)
+        public RestApiClient(ILogger logger, HttpClient? httpClient, string baseAddress, ExchangeOptions options, HttpApiOptions apiOptions) 
+            : base(logger, apiOptions.OutputOriginalData || options.OutputOriginalData, 
+                  apiOptions.ApiCredentials ?? options.ApiCredentials,
+                  baseAddress)
         {
             var rateLimiters = new List<IRateLimiter>();
             foreach (var rateLimiter in apiOptions.RateLimiters)
                 rateLimiters.Add(rateLimiter);
             RateLimiters = rateLimiters;
             ClientOptions = options;
+            Options = apiOptions;
 
-            RequestFactory.Configure(apiOptions.RequestTimeout, options.Proxy, apiOptions.HttpClient);
+            RequestFactory.Configure(apiOptions.RequestTimeout, httpClient);
         }
 
         /// <summary>
@@ -204,7 +208,7 @@ namespace CryptoExchange.Net
                     var syncTimeResult = await syncTask.ConfigureAwait(false);
                     if (!syncTimeResult)
                     {
-                        _log.Write(LogLevel.Debug, $"[{requestId}] Failed to sync time, aborting request: " + syncTimeResult.Error);
+                        _logger.Log(LogLevel.Debug, $"[{requestId}] Failed to sync time, aborting request: " + syncTimeResult.Error);
                         return syncTimeResult.As<IRequest>(default);
                     }
                 }
@@ -214,7 +218,7 @@ namespace CryptoExchange.Net
             {
                 foreach (var limiter in RateLimiters)
                 {
-                    var limitResult = await limiter.LimitRequestAsync(_log, uri.AbsolutePath, method, signed, Options.ApiCredentials?.Key ?? ClientOptions.ApiCredentials?.Key, Options.RateLimitingBehaviour, requestWeight, cancellationToken).ConfigureAwait(false);
+                    var limitResult = await limiter.LimitRequestAsync(_logger, uri.AbsolutePath, method, signed, Options.ApiCredentials?.Key ?? ClientOptions.ApiCredentials?.Key, Options.RateLimitingBehaviour, requestWeight, cancellationToken).ConfigureAwait(false);
                     if (!limitResult.Success)
                         return new CallResult<IRequest>(limitResult.Error!);
                 }
@@ -222,11 +226,11 @@ namespace CryptoExchange.Net
 
             if (signed && AuthenticationProvider == null)
             {
-                _log.Write(LogLevel.Warning, $"[{requestId}] Request {uri.AbsolutePath} failed because no ApiCredentials were provided");
+                _logger.Log(LogLevel.Warning, $"[{requestId}] Request {uri.AbsolutePath} failed because no ApiCredentials were provided");
                 return new CallResult<IRequest>(new NoApiCredentialsError());
             }
 
-            _log.Write(LogLevel.Information, $"[{requestId}] Creating request for " + uri);
+            _logger.Log(LogLevel.Information, $"[{requestId}] Creating request for " + uri);
             var paramsPosition = parameterPosition ?? ParameterPositions[method];
             var request = ConstructRequest(uri, method, parameters?.OrderBy(p => p.Key).ToDictionary(p => p.Key, p => p.Value), signed, paramsPosition, arraySerialization ?? this.arraySerialization, requestId, additionalHeaders);
 
@@ -239,7 +243,7 @@ namespace CryptoExchange.Net
                 paramString += " with headers " + string.Join(", ", headers.Select(h => h.Key + $"=[{string.Join(",", h.Value)}]"));
 
             TotalRequestsMade++;
-            _log.Write(LogLevel.Trace, $"[{requestId}] Sending {method}{(signed ? " signed" : "")} request to {request.Uri}{paramString ?? " "}{(ClientOptions.Proxy == null ? "" : $" via proxy {ClientOptions.Proxy.Host}")}");
+            _logger.Log(LogLevel.Trace, $"[{requestId}] Sending {method}{(signed ? " signed" : "")} request to {request.Uri}{paramString ?? " "}");
             return new CallResult<IRequest>(request);
         }
 
@@ -275,7 +279,7 @@ namespace CryptoExchange.Net
                         var data = await reader.ReadToEndAsync().ConfigureAwait(false);
                         responseStream.Close();
                         response.Close();
-                        _log.Write(LogLevel.Debug, $"[{request.RequestId}] Response received in {sw.ElapsedMilliseconds}ms{(_log.Level == LogLevel.Trace ? (": " + data) : "")}");
+                        _logger.Log(LogLevel.Debug, $"[{request.RequestId}] Response received in {sw.ElapsedMilliseconds}ms{(Options.OutputOriginalData ? (": " + data) : "")}");
 
                         if (!expectedEmptyResponse)
                         {
@@ -336,7 +340,7 @@ namespace CryptoExchange.Net
                     // Http status code indicates error
                     using var reader = new StreamReader(responseStream);
                     var data = await reader.ReadToEndAsync().ConfigureAwait(false);
-                    _log.Write(LogLevel.Warning, $"[{request.RequestId}] Error received in {sw.ElapsedMilliseconds}ms: {data}");
+                    _logger.Log(LogLevel.Warning, $"[{request.RequestId}] Error received in {sw.ElapsedMilliseconds}ms: {data}");
                     responseStream.Close();
                     response.Close();
                     var parseResult = ValidateJson(data);
@@ -350,7 +354,7 @@ namespace CryptoExchange.Net
             {
                 // Request exception, can't reach server for instance
                 var exceptionInfo = requestException.ToLogString();
-                _log.Write(LogLevel.Warning, $"[{request.RequestId}] Request exception: " + exceptionInfo);
+                _logger.Log(LogLevel.Warning, $"[{request.RequestId}] Request exception: " + exceptionInfo);
                 return new WebCallResult<T>(null, null, null, null, request.Uri.ToString(), request.Content, request.Method, request.GetHeaders(), default, new WebError(exceptionInfo));
             }
             catch (OperationCanceledException canceledException)
@@ -358,13 +362,13 @@ namespace CryptoExchange.Net
                 if (cancellationToken != default && canceledException.CancellationToken == cancellationToken)
                 {
                     // Cancellation token canceled by caller
-                    _log.Write(LogLevel.Warning, $"[{request.RequestId}] Request canceled by cancellation token");
+                    _logger.Log(LogLevel.Warning, $"[{request.RequestId}] Request canceled by cancellation token");
                     return new WebCallResult<T>(null, null, null, null, request.Uri.ToString(), request.Content, request.Method, request.GetHeaders(), default, new CancellationRequestedError());
                 }
                 else
                 {
                     // Request timed out
-                    _log.Write(LogLevel.Warning, $"[{request.RequestId}] Request timed out: " + canceledException.ToLogString());
+                    _logger.Log(LogLevel.Warning, $"[{request.RequestId}] Request timed out: " + canceledException.ToLogString());
                     return new WebCallResult<T>(null, null, null, null, request.Uri.ToString(), request.Content, request.Method, request.GetHeaders(), default, new WebError($"[{request.RequestId}] Request timed out"));
                 }
             }

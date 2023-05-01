@@ -35,8 +35,9 @@ namespace CryptoExchange.Net
         /// <summary>
         /// ctor
         /// </summary>
+        /// <param name="logger">Logger</param>
         /// <param name="name">The name of the API this client is for</param>
-        protected BaseSocketClient(string name) : base(name)
+        protected BaseSocketClient(ILogger? logger, string name) : base(logger, name)
         {
         }
 
@@ -65,7 +66,7 @@ namespace CryptoExchange.Net
             if (subscription == null)
                 throw new ArgumentNullException(nameof(subscription));
 
-            log.Write(LogLevel.Information, $"Socket {subscription.SocketId} Unsubscribing subscription  " + subscription.Id);
+            _logger.Log(LogLevel.Information, $"Socket {subscription.SocketId} Unsubscribing subscription  " + subscription.Id);
             await subscription.CloseAsync().ConfigureAwait(false);
         }
 
@@ -88,7 +89,7 @@ namespace CryptoExchange.Net
         /// <returns></returns>
         public virtual async Task ReconnectAsync()
         {
-            log.Write(LogLevel.Information, $"Reconnecting all {CurrentConnections} connections");
+            _logger.Log(LogLevel.Information, $"Reconnecting all {CurrentConnections} connections");
             var tasks = new List<Task>();
             foreach (var client in ApiClients.OfType<SocketApiClient>())
             {

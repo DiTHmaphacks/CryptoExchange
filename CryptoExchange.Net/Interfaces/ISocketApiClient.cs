@@ -24,10 +24,6 @@ namespace CryptoExchange.Net.Interfaces
         /// </summary>
         double IncomingKbps { get; }
         /// <summary>
-        /// Client options
-        /// </summary>
-        ApiOptions Options { get; }
-        /// <summary>
         /// The factory for creating sockets. Used for unit testing
         /// </summary>
         IWebsocketFactory SocketFactory { get; set; }
