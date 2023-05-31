@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Interfaces;
 using CryptoExchange.Net.Objects;
-using CryptoExchange.Net.Objects.Options;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -88,18 +87,18 @@ namespace CryptoExchange.Net
         public string BaseAddress { get; }
 
         /// <summary>
-        /// 
+        /// Output the original string data along with the deserialized object
         /// </summary>
         public bool OutputOriginalData { get; }
 
         /// <summary>
         /// The last used id, use NextId() to get the next id and up this
         /// </summary>
-        protected static int lastId;
+        protected static int _lastId;
         /// <summary>
         /// Lock for id generating
         /// </summary>
-        protected static object idLock = new();
+        protected static object _idLock = new();
 
         /// <summary>
         /// A default serializer
@@ -114,13 +113,11 @@ namespace CryptoExchange.Net
         /// ctor
         /// </summary>
         /// <param name="logger">Logger</param>
-        /// <param name="clientOptions">Client options</param>
-        /// <param name="apiOptions">Api client options</param>
+        /// <param name="outputOriginalData">Should data from this client include the orginal data in the call result</param>
+        /// <param name="baseAddress">Base address for this API client</param>
+        /// <param name="apiCredentials">Api client options</param>
         protected BaseApiClient(ILogger logger, bool outputOriginalData, ApiCredentials? apiCredentials, string baseAddress)
         {
-            if (string.IsNullOrEmpty(baseAddress))
-                throw new ArgumentNullException(nameof(ApiOptions.TradeEnvironment));
-
             _logger = logger;
             _apiCredentials = apiCredentials?.Copy();
             OutputOriginalData = outputOriginalData;
@@ -253,7 +250,6 @@ namespace CryptoExchange.Net
             {
                 // Let the reader keep the stream open so we're able to seek if needed. The calling method will close the stream.
                 using var reader = new StreamReader(stream, Encoding.UTF8, false, 512, true);
-
                 // If we have to output the original json data or output the data into the logging we'll have to read to full response
                 // in order to log/return the json data
                 if (OutputOriginalData == true)
@@ -261,8 +257,7 @@ namespace CryptoExchange.Net
                     data = await reader.ReadToEndAsync().ConfigureAwait(false);
                     _logger.Log(LogLevel.Debug, $"{(requestId != null ? $"[{requestId}] " : "")}Response received{(elapsedMilliseconds != null ? $" in {elapsedMilliseconds}" : " ")}ms: " + data);
                     var result = Deserialize<T>(data, serializer, requestId);
-                    if (OutputOriginalData == true)
-                        result.OriginalData = data;
+                    result.OriginalData = data;
                     return result;
                 }
 
@@ -341,10 +336,10 @@ namespace CryptoExchange.Net
         /// <returns></returns>
         protected static int NextId()
         {
-            lock (idLock)
+            lock (_idLock)
             {
-                lastId += 1;
-                return lastId;
+                _lastId += 1;
+                return _lastId;
             }
         }
 

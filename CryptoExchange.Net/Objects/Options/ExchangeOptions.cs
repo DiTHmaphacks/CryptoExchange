@@ -1,4 +1,5 @@
 ﻿using CryptoExchange.Net.Authentication;
+using System;
 
 namespace CryptoExchange.Net.Objects.Options
 {
@@ -7,6 +8,11 @@ namespace CryptoExchange.Net.Objects.Options
     /// </summary>
     public class ExchangeOptions
     {
+        /// <summary>
+        /// Proxy settings
+        /// </summary>
+        public ApiProxy? Proxy { get; set; }
+
         /// <summary>
         /// The api credentials used for signing requests to this API.
         /// </summary>        
@@ -18,17 +24,14 @@ namespace CryptoExchange.Net.Objects.Options
         public bool OutputOriginalData { get; set; } = false;
 
         /// <summary>
-        /// Create a copy of this options
+        /// The max time a request is allowed to take
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        protected T Copy<T>() where T: ExchangeOptions, new()
+        public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(20);
+
+        /// <inheritdoc />
+        public override string ToString()
         {
-            return new T
-            {
-                ApiCredentials = ApiCredentials?.Copy(),
-                OutputOriginalData = OutputOriginalData
-            };
+            return $"RequestTimeout: {RequestTimeout}, Proxy: {(Proxy == null ? "-" : "set")}, ApiCredentials: {(ApiCredentials == null ? "-" : "set")}";
         }
     }
 }

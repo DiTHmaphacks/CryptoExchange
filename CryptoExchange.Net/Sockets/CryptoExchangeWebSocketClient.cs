@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.WebSockets;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,8 +26,8 @@ namespace CryptoExchange.Net.Sockets
             Reconnecting
         }
 
-        internal static int lastStreamId;
-        private static readonly object streamIdLock = new();
+        internal static int _lastStreamId;
+        private static readonly object _streamIdLock = new();
 
         private readonly AsyncResetEvent _sendEvent;
         private readonly ConcurrentQueue<byte[]> _sendBuffer;
@@ -100,14 +99,19 @@ namespace CryptoExchange.Net.Sockets
 
         /// <inheritdoc />
         public event Action? OnClose;
+
         /// <inheritdoc />
         public event Action<string>? OnMessage;
+
         /// <inheritdoc />
         public event Action<Exception>? OnError;
+
         /// <inheritdoc />
         public event Action? OnOpen;
+
         /// <inheritdoc />
         public event Action? OnReconnecting;
+
         /// <inheritdoc />
         public event Action? OnReconnected;
         /// <inheritdoc />
@@ -710,10 +714,10 @@ namespace CryptoExchange.Net.Sockets
         /// <returns></returns>
         private static int NextStreamId()
         {
-            lock (streamIdLock)
+            lock (_streamIdLock)
             {
-                lastStreamId++;
-                return lastStreamId;
+                _lastStreamId++;
+                return _lastStreamId;
             }
         }
 
@@ -733,8 +737,10 @@ namespace CryptoExchange.Net.Sockets
             if (checkTime - _lastReceivedMessagesUpdate > TimeSpan.FromSeconds(1))
             {
                 foreach (var msg in _receivedMessages.ToList()) // To list here because we're removing from the list
+                {
                     if (checkTime - msg.Timestamp > TimeSpan.FromSeconds(3))
                         _receivedMessages.Remove(msg);
+                }
 
                 _lastReceivedMessagesUpdate = checkTime;
             }

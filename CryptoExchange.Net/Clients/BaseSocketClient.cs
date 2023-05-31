@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Interfaces;
-using CryptoExchange.Net.Objects;
-using CryptoExchange.Net.Objects.Options;
 using CryptoExchange.Net.Sockets;
 using Microsoft.Extensions.Logging;
 
@@ -22,7 +19,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// If client is disposing
         /// </summary>
-        protected bool disposing;
+        protected bool _disposing;
         
         /// <inheritdoc />
         public int CurrentConnections => ApiClients.OfType<SocketApiClient>().Sum(c => c.CurrentConnections);
@@ -37,7 +34,7 @@ namespace CryptoExchange.Net
         /// </summary>
         /// <param name="logger">Logger</param>
         /// <param name="name">The name of the API this client is for</param>
-        protected BaseSocketClient(ILogger? logger, string name) : base(logger, name)
+        protected BaseSocketClient(ILoggerFactory? logger, string name) : base(logger, name)
         {
         }
 

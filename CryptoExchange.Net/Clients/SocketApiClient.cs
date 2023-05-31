@@ -28,30 +28,37 @@ namespace CryptoExchange.Net
         /// List of socket connections currently connecting/connected
         /// </summary>
         protected internal ConcurrentDictionary<int, SocketConnection> socketConnections = new();
+
         /// <summary>
         /// Semaphore used while creating sockets
         /// </summary>
         protected internal readonly SemaphoreSlim semaphoreSlim = new(1);
+
         /// <summary>
         /// Keep alive interval for websocket connection
         /// </summary>
         protected TimeSpan KeepAliveInterval { get; set; } = TimeSpan.FromSeconds(10);
+
         /// <summary>
         /// Delegate used for processing byte data received from socket connections before it is processed by handlers
         /// </summary>
         protected Func<byte[], string>? dataInterpreterBytes;
+
         /// <summary>
         /// Delegate used for processing string data received from socket connections before it is processed by handlers
         /// </summary>
         protected Func<string, string>? dataInterpreterString;
+
         /// <summary>
         /// Handlers for data from the socket which doesn't need to be forwarded to the caller. Ping or welcome messages for example.
         /// </summary>
         protected Dictionary<string, Action<MessageEvent>> genericHandlers = new();
+
         /// <summary>
         /// The task that is sending periodic data on the websocket. Can be used for sending Ping messages every x seconds or similair. Not necesarry.
         /// </summary>
         protected Task? periodicTask;
+
         /// <summary>
         /// Wait event for the periodicTask
         /// </summary>
@@ -87,6 +94,7 @@ namespace CryptoExchange.Net
 
         /// <inheritdoc />
         public int CurrentConnections => socketConnections.Count;
+
         /// <inheritdoc />
         public int CurrentSubscriptions
         {
@@ -105,7 +113,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// Options
         /// </summary>
-        internal ExchangeOptions ClientOptions { get; set; }
+        public SocketExchangeOptions ClientOptions { get; set; }
         #endregion
 
         /// <summary>
@@ -113,13 +121,15 @@ namespace CryptoExchange.Net
         /// </summary>
         /// <param name="logger">log</param>
         /// <param name="options">Client options</param>
+        /// <param name="baseAddress">Base address for this API client</param>
         /// <param name="apiOptions">The Api client options</param>
-        public SocketApiClient(ILogger logger, string baseAddress, ExchangeOptions options, ApiOptions apiOptions) 
-            : base(logger, apiOptions.OutputOriginalData || options.OutputOriginalData,
+        public SocketApiClient(ILogger logger, string baseAddress, SocketExchangeOptions options, SocketApiOptions apiOptions) 
+            : base(logger, apiOptions.OutputOriginalData ?? options.OutputOriginalData,
                   apiOptions.ApiCredentials ?? options.ApiCredentials,
                   baseAddress)
         {
             ClientOptions = options;
+            Options = apiOptions;
         }
 
         /// <summary>
@@ -197,7 +207,7 @@ namespace CryptoExchange.Net
                         continue;
                     }
 
-                    if (Options.SocketSubscriptionsCombineTarget == 1)
+                    if (ClientOptions.SocketSubscriptionsCombineTarget == 1)
                     {
                         // Only 1 subscription per connection, so no need to wait for connection since a new subscription will create a new connection anyway
                         semaphoreSlim.Release();
@@ -265,7 +275,7 @@ namespace CryptoExchange.Net
         protected internal virtual async Task<CallResult<bool>> SubscribeAndWaitAsync(SocketConnection socketConnection, object request, SocketSubscription subscription)
         {
             CallResult<object>? callResult = null;
-            await socketConnection.SendAndWaitAsync(request, Options.SocketResponseTimeout, subscription, data => HandleSubscriptionResponse(socketConnection, subscription, request, data, out callResult)).ConfigureAwait(false);
+            await socketConnection.SendAndWaitAsync(request, ClientOptions.RequestTimeout, subscription, data => HandleSubscriptionResponse(socketConnection, subscription, request, data, out callResult)).ConfigureAwait(false);
 
             if (callResult?.Success == true)
             {
@@ -315,7 +325,7 @@ namespace CryptoExchange.Net
 
                 socketConnection = socketResult.Data;
 
-                if (Options.SocketSubscriptionsCombineTarget == 1)
+                if (ClientOptions.SocketSubscriptionsCombineTarget == 1)
                 {
                     // Can release early when only a single sub per connection
                     semaphoreSlim.Release();
@@ -351,7 +361,7 @@ namespace CryptoExchange.Net
         protected virtual async Task<CallResult<T>> QueryAndWaitAsync<T>(SocketConnection socket, object request)
         {
             var dataResult = new CallResult<T>(new ServerError("No response on query received"));
-            await socket.SendAndWaitAsync(request, Options.SocketResponseTimeout, null, data =>
+            await socket.SendAndWaitAsync(request, ClientOptions.RequestTimeout, null, data =>
             {
                 if (!HandleQueryResponse<T>(socket, request, data, out var callResult))
                     return false;
@@ -378,8 +388,8 @@ namespace CryptoExchange.Net
             if (!connectResult)
                 return new CallResult<bool>(connectResult.Error!);
 
-            if (Options.DelayAfterConnect != TimeSpan.Zero)
-                await Task.Delay(Options.DelayAfterConnect).ConfigureAwait(false);
+            if (ClientOptions.DelayAfterConnect != TimeSpan.Zero)
+                await Task.Delay(ClientOptions.DelayAfterConnect).ConfigureAwait(false);
 
             if (!authenticated || socket.Authenticated)
                 return new CallResult<bool>(true);
@@ -414,6 +424,7 @@ namespace CryptoExchange.Net
         /// <param name="callResult">The interpretation (null if message wasn't a response to the request)</param>
         /// <returns>True if the message was a response to the query</returns>
         protected internal abstract bool HandleQueryResponse<T>(SocketConnection socketConnection, object request, JToken data, [NotNullWhen(true)] out CallResult<T>? callResult);
+        
         /// <summary>
         /// The socketConnection received data (the data JToken parameter). The implementation of this method should check if the received data is a response to the subscription request that was send (the request parameter).
         /// For example; A subscribe request message is send with an Id parameter with value 10. The socket receives data and calls this method to see if the data it received is an
@@ -428,6 +439,7 @@ namespace CryptoExchange.Net
         /// <param name="callResult">The interpretation (null if message wasn't a response to the request)</param>
         /// <returns>True if the message was a response to the subscription request</returns>
         protected internal abstract bool HandleSubscriptionResponse(SocketConnection socketConnection, SocketSubscription subscription, object request, JToken data, out CallResult<object>? callResult);
+        
         /// <summary>
         /// Needs to check if a received message matches a handler by request. After subscribing data message will come in. These data messages need to be matched to a specific connection
         /// to pass the correct data to the correct handler. The implementation of this method should check if the message received matches the subscribe request that was sent.
@@ -437,6 +449,7 @@ namespace CryptoExchange.Net
         /// <param name="request">The subscription request</param>
         /// <returns>True if the message is for the subscription which sent the request</returns>
         protected internal abstract bool MessageMatchesHandler(SocketConnection socketConnection, JToken message, object request);
+        
         /// <summary>
         /// Needs to check if a received message matches a handler by identifier. Generally used by GenericHandlers. For example; a generic handler is registered which handles ping messages
         /// from the server. This method should check if the message received is a ping message and the identifer is the identifier of the GenericHandler
@@ -446,12 +459,14 @@ namespace CryptoExchange.Net
         /// <param name="identifier">The string identifier of the handler</param>
         /// <returns>True if the message is for the handler which has the identifier</returns>
         protected internal abstract bool MessageMatchesHandler(SocketConnection socketConnection, JToken message, string identifier);
+        
         /// <summary>
         /// Needs to authenticate the socket so authenticated queries/subscriptions can be made on this socket connection
         /// </summary>
         /// <param name="socketConnection">The socket connection that should be authenticated</param>
         /// <returns></returns>
         protected internal abstract Task<CallResult<bool>> AuthenticateSocketAsync(SocketConnection socketConnection);
+        
         /// <summary>
         /// Needs to unsubscribe a subscription, typically by sending an unsubscribe request. If multiple subscriptions per socket is not allowed this can just return since the socket will be closed anyway
         /// </summary>
@@ -488,7 +503,7 @@ namespace CryptoExchange.Net
                 if (typeof(T) == typeof(string))
                 {
                     var stringData = (T)Convert.ChangeType(messageEvent.JsonData.ToString(), typeof(T));
-                    dataHandler(new DataEvent<T>(stringData, null, Options.OutputOriginalData ? messageEvent.OriginalData : null, messageEvent.ReceivedTimestamp));
+                    dataHandler(new DataEvent<T>(stringData, null, OutputOriginalData ? messageEvent.OriginalData : null, messageEvent.ReceivedTimestamp));
                     return;
                 }
 
@@ -499,7 +514,7 @@ namespace CryptoExchange.Net
                     return;
                 }
 
-                dataHandler(new DataEvent<T>(desResult.Data, null, Options.OutputOriginalData ? messageEvent.OriginalData : null, messageEvent.ReceivedTimestamp));
+                dataHandler(new DataEvent<T>(desResult.Data, null, OutputOriginalData ? messageEvent.OriginalData : null, messageEvent.ReceivedTimestamp));
             }
 
             var subscription = request == null
@@ -569,7 +584,7 @@ namespace CryptoExchange.Net
             var result = socketResult.Equals(default(KeyValuePair<int, SocketConnection>)) ? null : socketResult.Value;
             if (result != null)
             {
-                if (result.SubscriptionCount < Options.SocketSubscriptionsCombineTarget || (socketConnections.Count >= Options.MaxSocketConnections && socketConnections.All(s => s.Value.SubscriptionCount >= Options.SocketSubscriptionsCombineTarget)))
+                if (result.SubscriptionCount < ClientOptions.SocketSubscriptionsCombineTarget || (socketConnections.Count >= Options.MaxSocketConnections && socketConnections.All(s => s.Value.SubscriptionCount >= ClientOptions.SocketSubscriptionsCombineTarget)))
                 {
                     // Use existing socket if it has less than target connections OR it has the least connections and we can't make new
                     return new CallResult<SocketConnection>(result);
@@ -630,14 +645,14 @@ namespace CryptoExchange.Net
         /// <param name="address">The address to connect to</param>
         /// <returns></returns>
         protected virtual WebSocketParameters GetWebSocketParameters(string address)
-            => new(new Uri(address), Options.AutoReconnect)
+            => new(new Uri(address), ClientOptions.AutoReconnect)
             {
                 DataInterpreterBytes = dataInterpreterBytes,
                 DataInterpreterString = dataInterpreterString,
                 KeepAliveInterval = KeepAliveInterval,
-                ReconnectInterval = Options.ReconnectInterval,
+                ReconnectInterval = ClientOptions.ReconnectInterval,
                 RatelimitPerSecond = RateLimitPerSocketPerSecond,
-                Proxy = Options.Proxy,
+                Proxy = ClientOptions.Proxy,
                 Timeout = Options.SocketNoDataTimeout
             };
 

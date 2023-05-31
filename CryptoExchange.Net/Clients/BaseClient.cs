@@ -2,6 +2,7 @@
 using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 
@@ -16,10 +17,12 @@ namespace CryptoExchange.Net
         /// The name of the API the client is for
         /// </summary>
         internal string Name { get; }
+
         /// <summary>
         /// Api clients in this client
         /// </summary>
         internal List<BaseApiClient> ApiClients { get; } = new List<BaseApiClient>();
+
         /// <summary>
         /// The log object
         /// </summary>
@@ -36,11 +39,11 @@ namespace CryptoExchange.Net
         /// <param name="logger">Logger</param>
         /// <param name="name">The name of the API this client is for</param>
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        protected BaseClient(ILogger? logger, string name)
+        protected BaseClient(ILoggerFactory? logger, string name)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
-            _logger = logger ?? new TraceLogger();
-            
+            _logger = logger?.CreateLogger(name) ?? NullLoggerFactory.Instance.CreateLogger(name);
+
             Name = name;
         }
 
@@ -77,7 +80,7 @@ namespace CryptoExchange.Net
             if (ClientOptions == null)
                 throw new InvalidOperationException("Client should have called Initialize before adding API clients");
 
-            //_logger.Log(LogLevel.Trace, $"  {apiClient.GetType().Name} configuration: {apiClient.Options}");
+            _logger.Log(LogLevel.Trace, $"  {apiClient.GetType().Name}, base address: {apiClient.BaseAddress}");
             ApiClients.Add(apiClient);
             return apiClient;
         }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace CryptoExchange.Net.Objects
 {
@@ -20,27 +18,22 @@ namespace CryptoExchange.Net.Objects
     }
 
     /// <summary>
-    /// Trade environment info
+    /// Trade environment. Contains info about URL's to use to connect to the API. To swap environment select another environment for
+    /// the echange's environment list or create a custom environment using either `[Exchange]Environment.CreateCustom()` or `[Exchange]Environment.[Environment]`, for example `KucoinEnvironment.TestNet` or `BinanceEnvironment.Live`
     /// </summary>
     public class TradeEnvironment
     {
         /// <summary>
-        /// Name of the environement
+        /// Name of the environment
         /// </summary>
         public string EnvironmentName { get; init; }
-        /// <summary>
-        /// Base address
-        /// </summary>
-        public Dictionary<string, string> Addresses { get; init; }
 
         /// <summary>
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="addresses"></param>
-        public TradeEnvironment(string name, Dictionary<string, string> addresses)
+        protected TradeEnvironment(string name)
         {
             EnvironmentName = name;
-            Addresses = addresses;
         }
     }
 }

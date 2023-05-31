@@ -1,20 +1,14 @@
 ﻿using CryptoExchange.Net.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 
 namespace CryptoExchange.Net.Objects.Options
 {
     /// <summary>
     /// Http api options
     /// </summary>
-    public class HttpApiOptions : ApiOptions
+    public class RestApiOptions : ApiOptions
     {
-        /// <summary>
-        /// The time the server has to respond to a request before timing out
-        /// </summary>
-        public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(30);
-
         /// <summary>
         /// List of rate limiters to use
         /// </summary>
@@ -40,17 +34,15 @@ namespace CryptoExchange.Net.Objects.Options
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public T Copy<T>() where T : HttpApiOptions, new()
+        public virtual T Copy<T>() where T : RestApiOptions, new()
         {
             return new T
             {
                 ApiCredentials = ApiCredentials?.Copy(),
                 OutputOriginalData = OutputOriginalData,
-                TradeEnvironment = TradeEnvironment,
                 AutoTimestamp = AutoTimestamp,
                 RateLimiters = RateLimiters,
                 RateLimitingBehaviour = RateLimitingBehaviour,
-                RequestTimeout = RequestTimeout,
                 TimestampRecalculationInterval = TimestampRecalculationInterval
             };
         }

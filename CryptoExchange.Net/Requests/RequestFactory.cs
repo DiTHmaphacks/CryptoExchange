@@ -11,29 +11,24 @@ namespace CryptoExchange.Net.Requests
     /// </summary>
     public class RequestFactory : IRequestFactory
     {
-        private HttpClient? httpClient;        
+        private HttpClient? _httpClient;        
 
         /// <inheritdoc />
         public void Configure(TimeSpan requestTimeout, HttpClient? client = null)
         {
-            if (client == null)
+            _httpClient = client ?? new HttpClient()
             {
-                httpClient = new HttpClient() { Timeout = requestTimeout };
-            }
-            else
-            {
-                httpClient = client;
-                httpClient.Timeout = requestTimeout;
-            }
+                Timeout = requestTimeout
+            };
         }
 
         /// <inheritdoc />
         public IRequest Create(HttpMethod method, Uri uri, int requestId)
         {
-            if (httpClient == null)
+            if (_httpClient == null)
                 throw new InvalidOperationException("Cant create request before configuring http client");
 
-            return new Request(new HttpRequestMessage(method, uri), httpClient, requestId);
+            return new Request(new HttpRequestMessage(method, uri), _httpClient, requestId);
         }
     }
 }

@@ -341,7 +341,7 @@ namespace CryptoExchange.Net.Sockets
             }
 
             // Message was not a request response, check data handlers
-            var messageEvent = new MessageEvent(this, tokenData, ApiClient.Options.OutputOriginalData ? data : null, timestamp);
+            var messageEvent = new MessageEvent(this, tokenData, ApiClient.OutputOriginalData ? data : null, timestamp);
             var (handled, userProcessTime, subscription) = HandleData(messageEvent);
             if (!handled && !handledResponse)
             {
@@ -670,13 +670,13 @@ namespace CryptoExchange.Net.Sockets
             }
 
             // Foreach subscription which is subscribed by a subscription request we will need to resend that request to resubscribe
-            for (var i = 0; i < subscriptionList.Count; i += ApiClient.Options.MaxConcurrentResubscriptionsPerSocket)
+            for (var i = 0; i < subscriptionList.Count; i += ApiClient.ClientOptions.MaxConcurrentResubscriptionsPerSocket)
             {
                 if (!_socket.IsOpen)
                     return new CallResult<bool>(new WebError("Socket not connected"));
 
                 var taskList = new List<Task<CallResult<bool>>>();
-                foreach (var subscription in subscriptionList.Skip(i).Take(ApiClient.Options.MaxConcurrentResubscriptionsPerSocket))
+                foreach (var subscription in subscriptionList.Skip(i).Take(ApiClient.ClientOptions.MaxConcurrentResubscriptionsPerSocket))
                     taskList.Add(ApiClient.SubscribeAndWaitAsync(this, subscription.Request!, subscription));
 
                 await Task.WhenAll(taskList).ConfigureAwait(false);

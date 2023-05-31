@@ -90,31 +90,6 @@ namespace CryptoExchange.Net
         }
 
         /// <summary>
-        /// Add an optional parameter. Not added if value is null
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public static void AddOptionalParameter(this Dictionary<string, string> parameters, string key, string? value)
-        {
-            if (value != null)
-                parameters.Add(key, value);
-        }
-
-        /// <summary>
-        /// Add an optional parameter. Not added if value is null
-        /// </summary>
-        /// <param name="parameters"></param>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        /// <param name="converter"></param>
-        public static void AddOptionalParameter(this Dictionary<string, string> parameters, string key, string? value, JsonConverter converter)
-        {
-            if (value != null)
-                parameters.Add(key, JsonConvert.SerializeObject(value, converter));
-        }
-
-        /// <summary>
         /// Create a query string of the specified parameters
         /// </summary>
         /// <param name="parameters">The parameters to use</param>
@@ -128,7 +103,9 @@ namespace CryptoExchange.Net
             foreach (var arrayEntry in arraysParameters)
             {
                 if (serializationType == ArrayParametersSerialization.Array)
+                {
                     uriString += $"{string.Join("&", ((object[])(urlEncodeValues ? Uri.EscapeDataString(arrayEntry.Value.ToString()) : arrayEntry.Value)).Select(v => $"{arrayEntry.Key}[]={v}"))}&";
+                }
                 else
                 {
                     var array = (Array)arrayEntry.Value;
@@ -159,7 +136,9 @@ namespace CryptoExchange.Net
                         formData.Add(kvp.Key, value.ToString());
                 }
                 else
+                {
                     formData.Add(kvp.Key, kvp.Value.ToString());
+                }
             }
             return formData.ToString();
         }
@@ -223,7 +202,11 @@ namespace CryptoExchange.Net
                         if (b1 != b2) return false;
                     }
                 }
-                else return false;
+                else
+                {
+                    return false;
+                }
+
                 return true;
             }
             finally
@@ -287,8 +270,10 @@ namespace CryptoExchange.Net
         public static void ValidateIntValues(this int value, string argumentName, params int[] allowedValues)
         {
             if (!allowedValues.Contains(value))
+            {
                 throw new ArgumentException(
                     $"{value} not allowed for parameter {argumentName}, allowed values: {string.Join(", ", allowedValues)}", argumentName);
+            }
         }
 
         /// <summary>
@@ -301,8 +286,10 @@ namespace CryptoExchange.Net
         public static void ValidateIntBetween(this int value, string argumentName, int minValue, int maxValue)
         {
             if (value < minValue || value > maxValue)
+            {
                 throw new ArgumentException(
                     $"{value} not allowed for parameter {argumentName}, min: {minValue}, max: {maxValue}", argumentName);
+            }
         }
 
         /// <summary>
@@ -436,7 +423,9 @@ namespace CryptoExchange.Net
                         httpValueCollection.Add(arraySerialization == ArrayParametersSerialization.Array ? parameter.Key + "[]" : parameter.Key, item.ToString());
                 }
                 else
+                {
                     httpValueCollection.Add(parameter.Key, parameter.Value.ToString());
+                }
             }
             uriBuilder.Query = httpValueCollection.ToString();
             return uriBuilder.Uri;
@@ -465,12 +454,13 @@ namespace CryptoExchange.Net
                         httpValueCollection.Add(arraySerialization == ArrayParametersSerialization.Array ? parameter.Key + "[]" : parameter.Key, item.ToString());
                 }
                 else
+                {
                     httpValueCollection.Add(parameter.Key, parameter.Value.ToString());
+                }
             }
             uriBuilder.Query = httpValueCollection.ToString();
             return uriBuilder.Uri;
         }
-
 
         /// <summary>
         /// Add parameter to URI
