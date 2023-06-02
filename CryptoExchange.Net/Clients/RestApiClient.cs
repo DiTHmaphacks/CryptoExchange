@@ -40,19 +40,15 @@ namespace CryptoExchange.Net
         protected Dictionary<string, string>? StandardRequestHeaders { get; set; }
 
         /// <summary>
-        /// Options for this client
-        /// </summary>
-        public RestApiOptions Options { get; }
-
-        /// <summary>
         /// List of rate limiters
         /// </summary>
         internal IEnumerable<IRateLimiter> RateLimiters { get; }
 
-        /// <summary>
-        /// Options
-        /// </summary>
-        public RestExchangeOptions ClientOptions { get; }
+        /// <inheritdoc />
+        public new RestExchangeOptions ClientOptions => (RestExchangeOptions)base.ClientOptions;
+
+        /// <inheritdoc />
+        public new RestApiOptions ApiOptions => (RestApiOptions)base.ApiOptions;
 
         /// <summary>
         /// ctor
@@ -63,16 +59,17 @@ namespace CryptoExchange.Net
         /// <param name="options">The base client options</param>
         /// <param name="apiOptions">The Api client options</param>
         public RestApiClient(ILogger logger, HttpClient? httpClient, string baseAddress, RestExchangeOptions options, RestApiOptions apiOptions) 
-            : base(logger, apiOptions.OutputOriginalData ?? options.OutputOriginalData, 
+            : base(logger, 
+                  apiOptions.OutputOriginalData ?? options.OutputOriginalData, 
                   apiOptions.ApiCredentials ?? options.ApiCredentials,
-                  baseAddress)
+                  baseAddress,
+                  options,
+                  apiOptions)
         {
             var rateLimiters = new List<IRateLimiter>();
             foreach (var rateLimiter in apiOptions.RateLimiters)
                 rateLimiters.Add(rateLimiter);
             RateLimiters = rateLimiters;
-            ClientOptions = options;
-            Options = apiOptions;
 
             RequestFactory.Configure(options.RequestTimeout, httpClient);
         }
@@ -220,7 +217,7 @@ namespace CryptoExchange.Net
             {
                 foreach (var limiter in RateLimiters)
                 {
-                    var limitResult = await limiter.LimitRequestAsync(_logger, uri.AbsolutePath, method, signed, Options.ApiCredentials?.Key ?? ClientOptions.ApiCredentials?.Key, Options.RateLimitingBehaviour, requestWeight, cancellationToken).ConfigureAwait(false);
+                    var limitResult = await limiter.LimitRequestAsync(_logger, uri.AbsolutePath, method, signed, ApiOptions.ApiCredentials?.Key ?? ClientOptions.ApiCredentials?.Key, ApiOptions.RateLimitingBehaviour, requestWeight, cancellationToken).ConfigureAwait(false);
                     if (!limitResult.Success)
                         return new CallResult<IRequest>(limitResult.Error!);
                 }

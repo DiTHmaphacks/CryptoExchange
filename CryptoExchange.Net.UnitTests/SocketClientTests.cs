@@ -25,8 +25,8 @@ namespace CryptoExchange.Net.UnitTests
 
 
             //assert
-            Assert.NotNull(client.SubClient.Options.ApiCredentials);
-            Assert.AreEqual(1, client.SubClient.Options.MaxSocketConnections);
+            Assert.NotNull(client.SubClient.ApiOptions.ApiCredentials);
+            Assert.AreEqual(1, client.SubClient.ApiOptions.MaxSocketConnections);
         }
 
         [TestCase(true)]

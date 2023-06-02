@@ -1,4 +1,5 @@
-﻿using CryptoExchange.Net.Interfaces;
+﻿using CryptoExchange.Net.Authentication;
+using CryptoExchange.Net.Interfaces;
 using System;
 using System.Collections.Generic;
 
@@ -45,6 +46,22 @@ namespace CryptoExchange.Net.Objects.Options
                 RateLimitingBehaviour = RateLimitingBehaviour,
                 TimestampRecalculationInterval = TimestampRecalculationInterval
             };
+        }
+    }
+
+    /// <summary>
+    /// Http API options
+    /// </summary>
+    /// <typeparam name="TApiCredentials"></typeparam>
+    public class RestApiOptions<TApiCredentials>: RestApiOptions where TApiCredentials: ApiCredentials
+    {
+        /// <summary>
+        /// The api credentials used for signing requests to this API.
+        /// </summary>
+        public new TApiCredentials? ApiCredentials
+        {
+            get => (TApiCredentials?)base.ApiCredentials;
+            set => base.ApiCredentials = value;
         }
     }
 }

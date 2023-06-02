@@ -107,13 +107,12 @@ namespace CryptoExchange.Net
             }
         }
 
-        /// <inheritdoc />
-        public SocketApiOptions Options { get; }
 
-        /// <summary>
-        /// Options
-        /// </summary>
-        public SocketExchangeOptions ClientOptions { get; set; }
+        /// <inheritdoc />
+        public new SocketExchangeOptions ClientOptions => (SocketExchangeOptions)base.ClientOptions;
+
+        /// <inheritdoc />
+        public new SocketApiOptions ApiOptions => (SocketApiOptions)base.ApiOptions;
         #endregion
 
         /// <summary>
@@ -124,12 +123,13 @@ namespace CryptoExchange.Net
         /// <param name="baseAddress">Base address for this API client</param>
         /// <param name="apiOptions">The Api client options</param>
         public SocketApiClient(ILogger logger, string baseAddress, SocketExchangeOptions options, SocketApiOptions apiOptions) 
-            : base(logger, apiOptions.OutputOriginalData ?? options.OutputOriginalData,
+            : base(logger, 
+                  apiOptions.OutputOriginalData ?? options.OutputOriginalData,
                   apiOptions.ApiCredentials ?? options.ApiCredentials,
-                  baseAddress)
+                  baseAddress,
+                  options,
+                  apiOptions)
         {
-            ClientOptions = options;
-            Options = apiOptions;
         }
 
         /// <summary>
@@ -584,7 +584,7 @@ namespace CryptoExchange.Net
             var result = socketResult.Equals(default(KeyValuePair<int, SocketConnection>)) ? null : socketResult.Value;
             if (result != null)
             {
-                if (result.SubscriptionCount < ClientOptions.SocketSubscriptionsCombineTarget || (socketConnections.Count >= Options.MaxSocketConnections && socketConnections.All(s => s.Value.SubscriptionCount >= ClientOptions.SocketSubscriptionsCombineTarget)))
+                if (result.SubscriptionCount < ClientOptions.SocketSubscriptionsCombineTarget || (socketConnections.Count >= ApiOptions.MaxSocketConnections && socketConnections.All(s => s.Value.SubscriptionCount >= ClientOptions.SocketSubscriptionsCombineTarget)))
                 {
                     // Use existing socket if it has less than target connections OR it has the least connections and we can't make new
                     return new CallResult<SocketConnection>(result);
@@ -653,7 +653,7 @@ namespace CryptoExchange.Net
                 ReconnectInterval = ClientOptions.ReconnectInterval,
                 RatelimitPerSecond = RateLimitPerSocketPerSecond,
                 Proxy = ClientOptions.Proxy,
-                Timeout = Options.SocketNoDataTimeout
+                Timeout = ApiOptions.SocketNoDataTimeout
             };
 
         /// <summary>

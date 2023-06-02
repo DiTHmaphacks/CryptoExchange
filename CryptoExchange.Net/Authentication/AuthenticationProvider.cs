@@ -12,14 +12,15 @@ namespace CryptoExchange.Net.Authentication
     /// <summary>
     /// Base class for authentication providers
     /// </summary>
-    public abstract class AuthenticationProvider
+    public abstract class AuthenticationProvider : IDisposable
     {
         /// <summary>
-        /// The provided credentials
+        /// Provided credentials
         /// </summary>
-        public ApiCredentials Credentials { get; }
+        protected readonly ApiCredentials _credentials;
 
         /// <summary>
+        /// Byte representation of the secret
         /// </summary>
         protected byte[] _sBytes;
 
@@ -32,7 +33,7 @@ namespace CryptoExchange.Net.Authentication
             if (credentials.Secret == null)
                 throw new ArgumentException("ApiKey/Secret needed");
 
-            Credentials = credentials;
+            _credentials = credentials;
             _sBytes = Encoding.UTF8.GetBytes(credentials.Secret.GetString());
         }
 
@@ -83,7 +84,7 @@ namespace CryptoExchange.Net.Authentication
         {
             using var encryptor = SHA256.Create();
             var resultBytes = encryptor.ComputeHash(Encoding.UTF8.GetBytes(data));
-            return outputType == SignOutputType.Base64 ? BytesToBase64String(resultBytes): BytesToHexString(resultBytes);
+            return outputType == SignOutputType.Base64 ? BytesToBase64String(resultBytes) : BytesToHexString(resultBytes);
         }
 
         /// <summary>
@@ -234,6 +235,27 @@ namespace CryptoExchange.Net.Authentication
         protected static string GetMillisecondTimestamp(RestApiClient apiClient)
         {
             return DateTimeConverter.ConvertToMilliseconds(GetTimestamp(apiClient)).Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            _credentials?.Dispose();
+        }
+    }
+
+    /// <inheritdoc />
+    public abstract class AuthenticationProvider<TApiCredentials> : AuthenticationProvider where TApiCredentials : ApiCredentials
+    {
+        /// <inheritdoc />
+        protected new TApiCredentials _credentials => (TApiCredentials)base._credentials;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="credentials"></param>
+        protected AuthenticationProvider(TApiCredentials credentials) : base(credentials)
+        {
         }
     }
 }

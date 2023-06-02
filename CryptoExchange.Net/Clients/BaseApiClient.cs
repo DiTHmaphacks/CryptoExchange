@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Interfaces;
 using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Objects.Options;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -19,10 +21,6 @@ namespace CryptoExchange.Net
     /// </summary>
     public abstract class BaseApiClient : IDisposable, IBaseApiClient
     {
-        private ApiCredentials? _apiCredentials;
-        private AuthenticationProvider? _authenticationProvider;
-        private bool _created;
-
         /// <summary>
         /// Logger
         /// </summary>
@@ -36,19 +34,7 @@ namespace CryptoExchange.Net
         /// <summary>
         /// The authentication provider for this API client. (null if no credentials are set)
         /// </summary>
-        public AuthenticationProvider? AuthenticationProvider
-        {
-            get
-            {
-                if (!_created && !_disposing && _apiCredentials != null)
-                {
-                    _authenticationProvider = CreateAuthenticationProvider(_apiCredentials);
-                    _created = true;
-                }
-
-                return _authenticationProvider;
-            }
-        }
+        public AuthenticationProvider? AuthenticationProvider { get; private set; }
 
         /// <summary>
         /// Where to put the parameters for requests with different Http methods
@@ -110,18 +96,38 @@ namespace CryptoExchange.Net
         });
 
         /// <summary>
+        /// Api options
+        /// </summary>
+        public ApiOptions ApiOptions { get; }
+
+        /// <summary>
+        /// Client Options
+        /// </summary>
+        public ExchangeOptions ClientOptions { get; }
+
+        /// <summary>
         /// ctor
         /// </summary>
         /// <param name="logger">Logger</param>
         /// <param name="outputOriginalData">Should data from this client include the orginal data in the call result</param>
         /// <param name="baseAddress">Base address for this API client</param>
-        /// <param name="apiCredentials">Api client options</param>
-        protected BaseApiClient(ILogger logger, bool outputOriginalData, ApiCredentials? apiCredentials, string baseAddress)
+        /// <param name="apiCredentials">Api credentials</param>
+        /// <param name="clientOptions">Client options</param>
+        /// <param name="apiOptions">Api options</param>
+        protected BaseApiClient(ILogger logger, bool outputOriginalData, ApiCredentials? apiCredentials, string baseAddress, ExchangeOptions clientOptions, ApiOptions apiOptions)
         {
             _logger = logger;
-            _apiCredentials = apiCredentials?.Copy();
+
+            ClientOptions = clientOptions;
+            ApiOptions = apiOptions;
             OutputOriginalData = outputOriginalData;
             BaseAddress = baseAddress;
+
+            if (apiCredentials != null)
+            {
+                AuthenticationProvider?.Dispose();
+                AuthenticationProvider = CreateAuthenticationProvider(apiCredentials.Copy());
+            }
         }
 
         /// <summary>
@@ -134,9 +140,11 @@ namespace CryptoExchange.Net
         /// <inheritdoc />
         public void SetApiCredentials<T>(T credentials) where T : ApiCredentials
         {
-            _apiCredentials = credentials?.Copy();
-            _created = false;
-            _authenticationProvider = null;
+            if (credentials != null)
+            {
+                AuthenticationProvider?.Dispose();
+                AuthenticationProvider = CreateAuthenticationProvider(credentials.Copy());
+            }
         }
 
         /// <summary>
@@ -349,8 +357,7 @@ namespace CryptoExchange.Net
         public virtual void Dispose()
         {
             _disposing = true;
-            _apiCredentials?.Dispose();
-            AuthenticationProvider?.Credentials?.Dispose();
+            AuthenticationProvider?.Dispose();
         }
     }
 }

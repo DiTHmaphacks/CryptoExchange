@@ -35,7 +35,7 @@ namespace CryptoExchange.Net.UnitTests
             // act
             // assert
             Assert.Throws(typeof(ArgumentException),
-                () => new RestExchangeOptions<TestEnvironment>() { ApiCredentials = new ApiCredentials(key, secret) });
+                () => new RestExchangeOptions<TestEnvironment, ApiCredentials>() { ApiCredentials = new ApiCredentials(key, secret) });
         }
 
         [Test]
@@ -77,10 +77,12 @@ namespace CryptoExchange.Net.UnitTests
                 options.ApiCredentials = new ApiCredentials("333", "444");
             });
 
-            Assert.AreEqual(client.Api1.AuthenticationProvider.Credentials.Key.GetString(), "111");
-            Assert.AreEqual(client.Api1.AuthenticationProvider.Credentials.Secret.GetString(), "222");
-            Assert.AreEqual(client.Api2.AuthenticationProvider.Credentials.Key.GetString(), "333");
-            Assert.AreEqual(client.Api2.AuthenticationProvider.Credentials.Secret.GetString(), "444");
+            var authProvider1 = (TestAuthProvider)client.Api1.AuthenticationProvider;
+            var authProvider2 = (TestAuthProvider)client.Api2.AuthenticationProvider;
+            Assert.AreEqual(authProvider1.GetKey(), "111");
+            Assert.AreEqual(authProvider1.GetSecret(), "222");
+            Assert.AreEqual(authProvider2.GetKey(), "333");
+            Assert.AreEqual(authProvider2.GetSecret(), "444");
         }
 
         [Test]
@@ -91,10 +93,12 @@ namespace CryptoExchange.Net.UnitTests
 
             var client = new TestRestClient();
 
-            Assert.AreEqual(client.Api1.AuthenticationProvider.Credentials.Key.GetString(), "111");
-            Assert.AreEqual(client.Api1.AuthenticationProvider.Credentials.Secret.GetString(), "222");
-            Assert.AreEqual(client.Api2.AuthenticationProvider.Credentials.Key.GetString(), "123");
-            Assert.AreEqual(client.Api2.AuthenticationProvider.Credentials.Secret.GetString(), "456");
+            var authProvider1 = (TestAuthProvider)client.Api1.AuthenticationProvider;
+            var authProvider2 = (TestAuthProvider)client.Api2.AuthenticationProvider;
+            Assert.AreEqual(authProvider1.GetKey(), "111");
+            Assert.AreEqual(authProvider1.GetSecret(), "222");
+            Assert.AreEqual(authProvider2.GetKey(), "123");
+            Assert.AreEqual(authProvider2.GetSecret(), "456");
         }
 
         [Test]
@@ -109,15 +113,17 @@ namespace CryptoExchange.Net.UnitTests
                 options.Environment = new TestEnvironment("Test", "https://test.test");
             });
 
-            Assert.AreEqual(client.Api1.AuthenticationProvider.Credentials.Key.GetString(), "333");
-            Assert.AreEqual(client.Api1.AuthenticationProvider.Credentials.Secret.GetString(), "444");
-            Assert.AreEqual(client.Api2.AuthenticationProvider.Credentials.Key.GetString(), "123");
-            Assert.AreEqual(client.Api2.AuthenticationProvider.Credentials.Secret.GetString(), "456");
+            var authProvider1 = (TestAuthProvider)client.Api1.AuthenticationProvider;
+            var authProvider2 = (TestAuthProvider)client.Api2.AuthenticationProvider;
+            Assert.AreEqual(authProvider1.GetKey(), "333");
+            Assert.AreEqual(authProvider1.GetSecret(), "444");
+            Assert.AreEqual(authProvider2.GetKey(), "123");
+            Assert.AreEqual(authProvider2.GetSecret(), "456");
             Assert.AreEqual(client.Api2.BaseAddress, "https://localhost:123");
         }
     }
 
-    public class TestClientOptions: RestExchangeOptions<TestEnvironment>
+    public class TestClientOptions: RestExchangeOptions<TestEnvironment, ApiCredentials>
     {
         /// <summary>
         /// Default options for the futures client

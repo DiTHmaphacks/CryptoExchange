@@ -64,5 +64,8 @@ namespace CryptoExchange.Net.UnitTests
         {
             return toSign;
         }
+
+        public string GetKey() => _credentials.Key.GetString();
+        public string GetSecret() => _credentials.Secret.GetString();
     }
 }

@@ -1,6 +1,5 @@
-﻿using CryptoExchange.Net.Interfaces;
+﻿using CryptoExchange.Net.Authentication;
 using System;
-using System.Collections.Generic;
 
 namespace CryptoExchange.Net.Objects.Options
 {
@@ -28,10 +27,10 @@ namespace CryptoExchange.Net.Objects.Options
         {
             return new T
             {
-                ApiCredentials = ApiCredentials?.Copy(),
                 OutputOriginalData = OutputOriginalData,
                 AutoTimestamp = AutoTimestamp,
                 TimestampRecalculationInterval = TimestampRecalculationInterval,
+                ApiCredentials = ApiCredentials?.Copy(),
                 Proxy = Proxy,
                 RequestTimeout = RequestTimeout
             };
@@ -62,6 +61,23 @@ namespace CryptoExchange.Net.Objects.Options
             var result = base.Copy<T>();
             result.Environment = Environment;
             return result;
+        }
+    }
+
+    /// <summary>
+    /// Options for a rest exchange client
+    /// </summary>
+    /// <typeparam name="TEnvironment"></typeparam>
+    /// <typeparam name="TApiCredentials"></typeparam>
+    public class RestExchangeOptions<TEnvironment, TApiCredentials> : RestExchangeOptions<TEnvironment> where TEnvironment : TradeEnvironment where TApiCredentials : ApiCredentials
+    {
+        /// <summary>
+        /// The api credentials used for signing requests to this API.
+        /// </summary>        
+        public new TApiCredentials? ApiCredentials
+        {
+            get => (TApiCredentials?)base.ApiCredentials;
+            set => base.ApiCredentials = value;
         }
     }
 }

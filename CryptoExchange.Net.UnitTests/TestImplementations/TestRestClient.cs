@@ -206,20 +206,6 @@ namespace CryptoExchange.Net.UnitTests.TestImplementations
         }
     }
 
-    public class TestAuthProvider : AuthenticationProvider
-    {
-        public TestAuthProvider(ApiCredentials credentials) : base(credentials)
-        {
-        }
-
-        public override void AuthenticateRequest(RestApiClient apiClient, Uri uri, HttpMethod method, Dictionary<string, object> providedParameters, bool auth, ArrayParametersSerialization arraySerialization, HttpMethodParameterPosition parameterPosition, out SortedDictionary<string, object> uriParameters, out SortedDictionary<string, object> bodyParameters, out Dictionary<string, string> headers)
-        {
-            uriParameters = parameterPosition == HttpMethodParameterPosition.InUri ? new SortedDictionary<string, object>(providedParameters) : new SortedDictionary<string, object>();
-            bodyParameters = parameterPosition == HttpMethodParameterPosition.InBody ? new SortedDictionary<string, object>(providedParameters) : new SortedDictionary<string, object>();
-            headers = new Dictionary<string, string>();
-        }
-    }
-
     public class ParseErrorTestRestClient: TestRestClient
     {
         public ParseErrorTestRestClient() { }
