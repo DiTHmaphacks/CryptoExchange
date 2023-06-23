@@ -584,7 +584,7 @@ namespace CryptoExchange.Net
             var result = socketResult.Equals(default(KeyValuePair<int, SocketConnection>)) ? null : socketResult.Value;
             if (result != null)
             {
-                if (result.SubscriptionCount < ClientOptions.SocketSubscriptionsCombineTarget || (socketConnections.Count >= ApiOptions.MaxSocketConnections && socketConnections.All(s => s.Value.SubscriptionCount >= ClientOptions.SocketSubscriptionsCombineTarget)))
+                if (result.SubscriptionCount < ClientOptions.SocketSubscriptionsCombineTarget || (socketConnections.Count >= (ApiOptions.MaxSocketConnections ?? ClientOptions.MaxSocketConnections) && socketConnections.All(s => s.Value.SubscriptionCount >= ClientOptions.SocketSubscriptionsCombineTarget)))
                 {
                     // Use existing socket if it has less than target connections OR it has the least connections and we can't make new
                     return new CallResult<SocketConnection>(result);
@@ -653,7 +653,7 @@ namespace CryptoExchange.Net
                 ReconnectInterval = ClientOptions.ReconnectInterval,
                 RatelimitPerSecond = RateLimitPerSocketPerSecond,
                 Proxy = ClientOptions.Proxy,
-                Timeout = ApiOptions.SocketNoDataTimeout
+                Timeout = ApiOptions.SocketNoDataTimeout ?? ClientOptions.SocketNoDataTimeout
             };
 
         /// <summary>

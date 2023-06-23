@@ -12,7 +12,7 @@ namespace CryptoExchange.Net.Objects.Options
         /// The max time of not receiving any data after which the connection is assumed to be dropped. This can only be used for socket connections where a steady flow of data is expected,
         /// for example when the server sends intermittent ping requests
         /// </summary>
-        public TimeSpan SocketNoDataTimeout { get; set; }
+        public TimeSpan? SocketNoDataTimeout { get; set; }
 
         /// <summary>
         /// The max amount of connections to make to the server. Can be used for API's which only allow a certain number of connections. Changing this to a high value might cause issues.

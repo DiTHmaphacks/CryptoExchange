@@ -175,6 +175,47 @@ namespace CryptoExchange.Net.Authentication
         }
 
         /// <summary>
+        /// SHA256 sign the data
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="outputType"></param>
+        /// <returns></returns>
+        protected string SignRSASHA256(byte[] data, SignOutputType? outputType = null)
+        {
+            using var rsa = RSA.Create();
+            if (_credentials.CredentialType == ApiCredentialsType.RsaPem)
+            {
+#if NETSTANDARD2_1_OR_GREATER
+                // Read from pem private key
+                var key = _credentials.Secret!.GetString()
+                        .Replace("\n", "")
+                        .Replace("-----BEGIN PRIVATE KEY-----", "")
+                        .Replace("-----END PRIVATE KEY-----", "")
+                        .Trim();
+                rsa.ImportPkcs8PrivateKey(Convert.FromBase64String(
+                    key)
+                    , out _);
+#else
+                throw new Exception("Pem format not supported when running from .NetStandard2.0. Convert the private key to xml format.");
+#endif
+            }
+            else if (_credentials.CredentialType == ApiCredentialsType.RsaXml)
+            {
+                // Read from xml private key format
+                rsa.FromXmlString(_credentials.Secret!.GetString());
+            }
+            else
+            {
+                throw new Exception("Invalid credentials type");
+            }
+
+            using var sha256 = SHA256.Create();
+            var hash = sha256.ComputeHash(data);
+            var resultBytes = rsa.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            return outputType == SignOutputType.Base64? BytesToBase64String(resultBytes) : BytesToHexString(resultBytes);
+        }
+
+        /// <summary>
         /// Sign a string
         /// </summary>
         /// <param name="toSign"></param>

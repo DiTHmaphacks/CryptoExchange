@@ -23,12 +23,12 @@ namespace CryptoExchange.Net.Objects.Options
         /// <summary>
         /// Whether or not to automatically sync the local time with the server time
         /// </summary>
-        public bool AutoTimestamp { get; set; }
+        public bool? AutoTimestamp { get; set; }
 
         /// <summary>
         /// How often the timestamp adjustment between client and server is recalculated. If you need a very small TimeSpan here you're probably better of syncing your server time more often
         /// </summary>
-        public TimeSpan TimestampRecalculationInterval { get; set; } = TimeSpan.FromHours(1);
+        public TimeSpan? TimestampRecalculationInterval { get; set; }
 
         /// <summary>
         /// Create a copy of this options
