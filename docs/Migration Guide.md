@@ -8,6 +8,9 @@ When updating your code from version 5 implementations to version 6 implementati
 
 *NOTE when updating it is not possible to have some client implementations use a V5 version and some clients a V6. When updating all libraries should be migrated*
 
+## Rest client name
+To be more clear about different clients for different API's the rest client implementations have been renamed from [Exchange]Client to [Exchange]RestClient. This makes it more clear that it only implements the Rest API and the [Exchange]SocketClient the Socket API.
+
 ## Options
 Option parameters have been changed to a callback instead of an options object. This makes processing of the options easier and is in line with how dotnet handles option configurations.
 
